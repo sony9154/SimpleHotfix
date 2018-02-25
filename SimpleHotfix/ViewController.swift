@@ -8,6 +8,8 @@
 
 import UIKit
 import Alamofire
+import SSZipArchive
+
 /* https://dl.dropboxusercontent.com/s/sv78i6arbvwp0oj/FunctionZFJ1.framework.zip */
 
 class ViewController: UIViewController {
@@ -26,16 +28,21 @@ class ViewController: UIViewController {
       var documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
       
       // the name of the file here I kept is yourFileName with appended extension
-      documentsURL.appendPathComponent("qtaqta."+pathExtension)
-      return (documentsURL, [.removePreviousFile])
+      documentsURL.appendPathComponent("qta."+pathExtension)
+      return (documentsURL.absoluteURL, [.removePreviousFile])
     }
+    
+    var paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+    let documentsDir = paths[0]
+    let unZipPath =  documentsDir.appending("/UnZipFiles") // My folder name in document directory
     
     Alamofire.download("https://dl.dropboxusercontent.com/s/sv78i6arbvwp0oj/FunctionZFJ1.framework.zip", to: destination).response { response in
       if response.destinationURL != nil {
         print(response.destinationURL!)
+        let savepath = response.destinationURL?.path
+        SSZipArchive.unzipFile(atPath: savepath!, toDestination: unZipPath)
       }
     }
-    
   }
 
   override func didReceiveMemoryWarning() {
