@@ -11,7 +11,12 @@ import Alamofire
 import SSZipArchive
 
 
-/* https://dl.dropboxusercontent.com/s/sv78i6arbvwp0oj/FunctionZFJ1.framework.zip */
+/*
+ https://dl.dropboxusercontent.com/s/sv78i6arbvwp0oj/FunctionZFJ1.framework.zip
+ https://dl.dropboxusercontent.com/s/9lhxtghuyxetqek/FunctionZFJ1.framework.zip
+ https://dl.dropboxusercontent.com/s/9njkurkne82xrt9/ZF.framework.zip?dl=0
+ https://dl.dropboxusercontent.com/s/nbcaifzax6aebv0/02260531.framework.zip
+ */
 
 class ViewController: UIViewController {
 
