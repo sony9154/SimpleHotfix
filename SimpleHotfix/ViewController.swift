@@ -10,6 +10,7 @@ import UIKit
 import Alamofire
 import SSZipArchive
 
+
 /* https://dl.dropboxusercontent.com/s/sv78i6arbvwp0oj/FunctionZFJ1.framework.zip */
 
 class ViewController: UIViewController {
@@ -43,13 +44,23 @@ class ViewController: UIViewController {
         SSZipArchive.unzipFile(atPath: savepath!, toDestination: unZipPath)
       }
     }
+    
+    
   }
-
-  override func didReceiveMemoryWarning() {
-    super.didReceiveMemoryWarning()
-    // Dispose of any resources that can be recreated.
+  @IBAction func toFrameworkButton(_ sender: Any) {
+    var paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+    let documentsDir = paths[0]
+    let unZipPath =  documentsDir.appending("/UnZipFiles")
+    let bundlePath = unZipPath.appending("/FunctionZFJ1.framework")
+//    let bundle = Bundle(path: bundlePath)
+//    let loadClass: AnyClass? = bundle?.classNamed("ZFJViewController")
+    // 因為framework裡面的東西是OC寫的,所以物件設為NSObject, .Type是使用其類別
+    let loadClass: NSObject.Type? = Bundle(path: bundlePath)?.classNamed("ZFJViewController") as? NSObject.Type
+    let vc = loadClass?.init()// as? UIViewController
+    navigationController?.pushViewController(vc! as! UIViewController, animated: true)
+    
   }
-
+  
 
 }
 
