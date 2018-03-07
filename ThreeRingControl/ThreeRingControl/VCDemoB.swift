@@ -1,24 +1,23 @@
 //
-//  PeterViewController.swift
+//  VCDemoB.swift
 //  ThreeRingControl
 //
-//  Created by Peter Yo on 3月/1/18.
+//  Created by Peter Yo on 3月/7/18.
 //  Copyright © 2018年 Peter Yo. All rights reserved.
 //
 
 import UIKit
 
-public class PeterViewController: UIViewController {
+public class VCDemoB: UIViewController {
 
-    public override func viewDidLoad() {
+     public override func viewDidLoad() {
         super.viewDidLoad()
-
-        self.title = "HotfixDemoView_A"
-        self.view.backgroundColor = .orange
+        self.title = "DemoViewB"
+        self.view.backgroundColor = .green
         // Do any additional setup after loading the view.
     }
 
-    public override func didReceiveMemoryWarning() {
+     public override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }

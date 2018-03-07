@@ -15,6 +15,7 @@ struct FrameworkPatch: Decodable {
   let version: Double
   let file: URL
   let created_datetime: String
+  let vc_name: String
 }
 
 
@@ -92,13 +93,13 @@ class ViewController: UIViewController {
           
           guard let frameworkName = cs.last?.split(separator: ".").first else {return}
           
-          self.unzipFramework(fileUrl: fileUrl, name: String.init(frameworkName))
+          self.unzipFramework(fileUrl: fileUrl, name: String.init(frameworkName), vc_name: patch.vc_name)
         })
         
     }
   }
   
-  func unzipFramework(fileUrl: URL, name: String) -> Void {
+  func unzipFramework(fileUrl: URL, name: String, vc_name: String) -> Void {
 //    let docUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
 //
 //    let destinationURL = docUrl.appendingPathComponent("peter.\(url.pathComponents.last ?? "framework")")
@@ -121,21 +122,21 @@ class ViewController: UIViewController {
       
       let frameworkPath = unZipPath.appending("/\(name).framework")
       
-      
+      print(frameworkPath)
       print(FileManager.default.fileExists(atPath: frameworkPath))
       
       guard let framework = Bundle(path: frameworkPath) else {
         return
       }
       
-      self.openFramework(framework)
+      self.openFramework(framework, vc_name: vc_name)
     }
     
   }
   
-  func openFramework(_ bundle: Bundle) -> Void {
-    
-    let loadClass = bundle.classNamed("_TtC16ThreeRingControl19PeterViewController") as? NSObject.Type
+  func openFramework(_ bundle: Bundle, vc_name: String) -> Void {
+//    _TtC16ThreeRingControl19PeterViewController
+    let loadClass = bundle.classNamed(vc_name) as? NSObject.Type
     if let vc = loadClass?.init() as? UIViewController {
       navigationController?.pushViewController(vc, animated: true)
     }
