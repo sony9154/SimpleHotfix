@@ -9,6 +9,13 @@
 import UIKit
 import Alamofire
 import SSZipArchive
+import SVProgressHUD
+
+struct FrameworkPatch: Decodable {
+  let version: Double
+  let file: URL
+  let created_datetime: String
+}
 
 
 /*
@@ -29,47 +36,108 @@ class ViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    let myUrl = URL(string: "https://dl.dropboxusercontent.com/s/ybasp6rnb1pg2s1/ThreeRingControl.framework.zip")
-    //myUrl should be of type URL
-    let myFileName = String((myUrl?.lastPathComponent)!) as NSString
+  }
+  @IBAction func toFrameworkButton(_ sender: Any) {
     
-    //path extension will consist of the type of file it is, m4a or mp4
-    let pathExtension = myFileName.pathExtension
+    SVProgressHUD.showInfo(withStatus: "正在檢查更新")
     
-    let destination: DownloadRequest.DownloadFileDestination = { _, _ in
-      var documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      
-      // the name of the file here I kept is yourFileName with appended extension
-      documentsURL.appendPathComponent("peter."+pathExtension)
-      return (documentsURL.absoluteURL, [.removePreviousFile])
-    }
-    
-    var paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-    let documentsDir = paths[0]
-    let unZipPath =  documentsDir.appending("/UnZipFiles") // My folder name in document directory
-    
-    Alamofire.download("https://dl.dropboxusercontent.com/s/ybasp6rnb1pg2s1/ThreeRingControl.framework.zip", to: destination).response { response in
-      if response.destinationURL != nil {
-        print(response.destinationURL!)
-        let savepath = response.destinationURL?.path
-        SSZipArchive.unzipFile(atPath: savepath!, toDestination: unZipPath)
+    Alamofire.request(URL(string: "http://127.0.0.1:8000/api/framework_patch/latest/")!).responseData { (dataResponse) in
+      switch dataResponse.result {
+      case .success(let data):
+        
+        let decoder = JSONDecoder()
+        
+        guard let frameworkPatch = try? decoder.decode(FrameworkPatch.self, from: data) else {
+          SVProgressHUD.showError(withStatus: "解析錯誤")
+          return
+        }
+        
+        SVProgressHUD.showInfo(withStatus: "發現版本號:\(frameworkPatch.version)")
+        
+        SVProgressHUD.dismiss(withDelay: 2, completion: {
+          self.patchFramework(frameworkPatch)
+        })
+        
+      case .failure(let err):
+        SVProgressHUD.showError(withStatus: err.localizedDescription)
       }
     }
     
-    
   }
-  @IBAction func toFrameworkButton(_ sender: Any) {
+  
+  func patchFramework(_ patch: FrameworkPatch) {
+    
+    Alamofire.download(patch.file, to: { (url, response) -> (destinationURL: URL, options: DownloadRequest.DownloadOptions) in
+      
+      let docUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      
+      let destinationURL = docUrl.appendingPathComponent(patch.file.pathComponents.last!)
+      
+      return (destinationURL, [.removePreviousFile])
+    }).downloadProgress { (progress) in
+        SVProgressHUD.showProgress(Float(progress.fractionCompleted), status: "動態庫下載中...")
+      
+      }.response { (response) in
+        
+        guard let fileUrl = response.destinationURL, response.error == nil else {
+          
+          SVProgressHUD.showError(withStatus: response.error?.localizedDescription)
+          return
+        }
+        
+        SVProgressHUD.showProgress(1, status: "動態庫下載完成")
+        
+        SVProgressHUD.dismiss(withDelay: 1, completion: {
+          let cs = patch.file.pathComponents
+          
+          guard let frameworkName = cs.last?.split(separator: ".").first else {return}
+          
+          self.unzipFramework(fileUrl: fileUrl, name: String.init(frameworkName))
+        })
+        
+    }
+  }
+  
+  func unzipFramework(fileUrl: URL, name: String) -> Void {
+//    let docUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+//
+//    let destinationURL = docUrl.appendingPathComponent("peter.\(url.pathComponents.last ?? "framework")")
+    
+  
     var paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
     let documentsDir = paths[0]
     let unZipPath =  documentsDir.appending("/UnZipFiles")
-    let bundlePath = unZipPath.appending("/ThreeRingControl.framework")
-//    let bundle = Bundle(path: bundlePath)
-//    let loadClass: AnyClass? = bundle?.classNamed("ZFJViewController")
-    // 因為framework裡面的東西是OC寫的,所以物件設為NSObject, .Type是使用其類別
-    let bundle = Bundle(path: bundlePath)
-    let loadClass = bundle?.classNamed("_TtC16ThreeRingControl19PeterViewController") as? NSObject.Type
+    
+    SSZipArchive.unzipFile(atPath: fileUrl.path, toDestination: unZipPath, progressHandler: { (_, _, c, tc) in
+      SVProgressHUD.showProgress(Float(c)/Float(tc), status: "解壓中")
+    }) { (_, b, err) in
+      
+//      guard b, err != nil else {
+//        SVProgressHUD.showError(withStatus: err?.localizedDescription)
+//        return
+//      }
+      
+      SVProgressHUD.dismiss()
+      
+      let frameworkPath = unZipPath.appending("/\(name).framework")
+      
+      
+      print(FileManager.default.fileExists(atPath: frameworkPath))
+      
+      guard let framework = Bundle(path: frameworkPath) else {
+        return
+      }
+      
+      self.openFramework(framework)
+    }
+    
+  }
+  
+  func openFramework(_ bundle: Bundle) -> Void {
+    
+    let loadClass = bundle.classNamed("_TtC16ThreeRingControl19PeterViewController") as? NSObject.Type
     if let vc = loadClass?.init() as? UIViewController {
-        navigationController?.pushViewController(vc, animated: true)
+      navigationController?.pushViewController(vc, animated: true)
     }
   }
   

@@ -6,4 +6,5 @@ target 'SimpleHotfix' do
   use_frameworks!
   pod 'Alamofire'
   pod 'SSZipArchive'
+  pod 'SVProgressHUD'
 end
